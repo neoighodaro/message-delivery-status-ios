@@ -8,7 +8,7 @@ This article assumes you already have knowledge on Swift and Xcode, and does not
 
 The application will be an iOS chat application, and the application will allow you post messages and see the delivery status of the message when it has sent. This feature is similar to what you can find in chat applications like WhatsApp, Facebook Messenger, BBM and others. 
 
-[Better Screenshot]
+![How to build message delivery status in iOS using Pusher](https://dl.dropbox.com/s/qrml2une712my9f/message-delivery-status-on-ios-using-pusher-2.gif)
 
 > Note: You will need a Pusher account to work with this tutorial, you can create one by [clicking here](https://pusher.com). Create a new application and note your cluster, app ID, secret and key; they will all be needed for this tutorial.
 
@@ -347,7 +347,7 @@ and **packages.json**
 
 Now run `npm install` on the directory and then `node index.js` once the npm installation is complete. You should see *App listening on port 4000!* message.
 
-![](https://dl.dropbox.com/s/cvwccr7x358r7to/message-delivery-status-on-ios-using-pusher-5.png)
+![How to build message delivery status in iOS using Pusher](https://dl.dropbox.com/s/cvwccr7x358r7to/message-delivery-status-on-ios-using-pusher-5.png)
 
 ## Testing the application
 
