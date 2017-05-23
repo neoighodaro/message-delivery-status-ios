@@ -225,10 +225,6 @@ private func hitEndpoint(url: String, parameters: Parameters, message: AnonMessa
             }
 
         case .failure(let error):
-        	if message != nil {
-              message?.status = .failed
-              self.collectionView.reloadData()
-        	}
             print(error)
         }
     }

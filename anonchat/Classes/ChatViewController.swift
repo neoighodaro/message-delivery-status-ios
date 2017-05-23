@@ -111,10 +111,6 @@ class ChatViewController: JSQMessagesViewController {
                 }
 
             case .failure(let error):
-                if message != nil {
-                    message?.status = .failed
-                    self.collectionView.reloadData()
-                }
                 print(error)
             }
         }
