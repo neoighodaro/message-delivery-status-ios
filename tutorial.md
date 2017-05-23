@@ -1,39 +1,91 @@
-# Add delivery status to an iOS chat app using Pusher
+# How to build message delivery status in iOS using Pusher
 
-In our [previous article](#) we expanded our [public anonymous iOS chat application](#) by adding a someone is typing a message feature to the applicetion. In that article, we had to make some changes to the existing code base to add the feature.
+When building an application, sometimes, it is useful to know when certain events take place. This enables your application to respond in realtime and can be used in a number of ways. In this article, we will focus on how to implement message delivery status on an iOS application.
 
+This article assumes you already have knowledge on Swift and Xcode, and does not go into too much detail on how to use Xcode or the Swift syntax.
 
+### What our application will do
 
-### What we will be building
+The application will be an iOS chat application, and the application will allow you post messages and see the delivery status of the message when it has sent. This feature is similar to what you can find in chat applications like WhatsApp, Facebook Messenger, BBM and others. 
 
-In this article, we will be taking it a step further by adding another feature: **delivery status** for an outgoing message. We would be adding an indication on the application that will tell us when the message is sending and when it has been delivered.
+![How to build message delivery status in iOS using Pusher](https://dl.dropbox.com/s/qrml2une712my9f/message-delivery-status-on-ios-using-pusher-2.gif)
 
-![](https://dl.dropbox.com/s/qrml2une712my9f/message-delivery-status-on-ios-using-pusher-2.gif)
+> Note: You will need a Pusher account to work with this tutorial, you can create one by [clicking here](https://pusher.com). Create a new application and note your cluster, app ID, secret and key; they will all be needed for this tutorial.
 
-### Getting Started
+#### Getting started
 
-To get started we would be using the base application that we had created in the previous article. You can get the source to the application [on Github](https://github.com/neoighodaro/anonymous-ios-app-pusher/tree/v1.1.1). After downloading the application, unzip it and open the `.xcworkspace` file in the root of the directory, this should launch XCode. Unlike the last time, we wont be making any UI changes, just pure code additions, changes and adjustments. 
+To get started you will need XCode installed on your machine and also you will need Cocoapods package manager installed. If you have these installed then lets continue. If you have not installed Cocoapods do so:
 
-Before we continue, make sure you already have your [Pusher](https://pusher.com) application ready and replace the `PUSHER_SECRET`, `PUSHER_ID`, `PUSHER_KEY`, and `PUSHER_CLUSTER` with the one provided for your application by Pusher.
+```Shell
+$ gem install cocoapods
+```
 
-### Plan of Action
+Now that you have that installed, launch Xcode and create a new project, we are calling ours Anonchat. Now close Xcode and then `cd` to the root of your project and run the command `pod init`. This should generate a `Podfile` for you. Change the contents of the `Podfile`:
 
-So what do we need to do to get the message delivery to be displayed in this chat application? Creating a list of things we want to do will make it that much easier to know what to do and plan better on how to do it.
+```
+# Uncomment the next line to define a global platform for your project
+platform :ios, '9.0'
 
-* Extend the `JSQMessage` class to support new properties like `id` and `status`. With this we can track the status and the id of the message that has been sent.
-* For every message check if the message is an outgoing message, if it is, check the message `status` and then set.
-* When a new message is sent, check the response if it is successful, if yes, change the `status` of the message.
-* Update the layout to reflect all the changes made to the message instance.
+target 'anonchat' do
+  # Comment the next line if you're not using Swift and don't want to use dynamic frameworks
+  use_frameworks!
 
+  # Pods for anonchat
+  pod 'Alamofire'
+  pod 'PusherSwift'
+  pod 'JSQMessagesViewController'
+end
+```
 
+Now run the command `pod install` so the Cocoapods package manager can pull in the necessary dependencies. When this is complete, close XCode (if open) and then open the `.xcworkspace` file that is in the root of your project folder.
 
-### Development
+#### Creating the views for our iOS Application
 
-##### Extending the JSQMessage class 
+We are going to be creating a couple of views that we will need for the chat application to function properly. The views will look something like the screenshot below:
 
-The `JSQMessage` class is the class that holds the message details and it is part of the `JSQMessagesViewController` package that we pulled using cocoapods in the first article. We will extend this class by creating another class `AnonMessage` that extends it. Then we will change all the instances of `JSQMessage` class in our codebase:
+![Message delivery status for iOS using Pusher](https://dl.dropbox.com/s/8551jebu1vava4k/message-delivery-status-on-ios-using-pusher-3.png) 
+
+Quickly, what we have done above is create a the first ViewController which will serve as our welcome ViewController, and we have added a button which triggers navigation to the next controller which is a `Navigation Controller`. This Navigation Controller in turn has a View Controller set as the root controller.
+
+### Coding the message delivery status for our iOS application
+
+Now that we have set up the views using the interface builder on the `MainStoryboard`, lets add some functionality. The first thing we would do is create a `WelcomeViewController` and associate it with the first view on the left. This will be the logic house for that view; we wont add much to it for now though:
+
+```Swift
+import UIKit
+
+class WelcomeViewController: UIViewController {
+    override func viewDidLoad() {
+        super.viewDidLoad()
+    }
+}
+```
+
+Now that we have created that, we should create another controller called the `ChatViewController`, this controller would be the main power house and where everything would be happening. The controller would extend the `JSQMessagesViewController`. Once this controller is extended, we would automatically get a nice chat interface to work with out of the box, then we have to work on customising this chat interface to work for us.
 
 ```swift
+import UIKit
+import Alamofire
+import PusherSwift
+import JSQMessagesViewController
+
+class ChatViewController: JSQMessagesViewController {
+    override func viewDidLoad() {
+        super.viewDidLoad()
+
+        let n = Int(arc4random_uniform(1000))
+
+        senderId = "anonymous" + String(n)
+        senderDisplayName = senderId
+    }
+}
+```
+
+If you notice on the `viewDidLoad` method, we are generating a random username and setting that to be the `senderId` and `senderDisplayName` on the controller. This extends the properties set in the parent controller and is required.
+
+Before we continue working on the chat controller, we want to create a last class called the `AnonMessage` class. This will extend the `JSQMessage` class and we will be using this to extend the default functionality of the class.
+
+```Swift
 import UIKit
 import JSQMessagesViewController
 
@@ -58,124 +110,60 @@ class AnonMessage: JSQMessage {
 }
 ```
 
-In the code above we create a class and an enum where we define all the states we expect a message to exist in, you can always expand them to suite your needs.
+In the class above we have extended the `JSQMessage` class and we have also added some new properties to track; the `id` and the `status`. We also added an initialization method so we can specify the new properties before instantiating the `JSQMessage` class properly. We also added an `enum` that contains all the statuses the message could possibly have.
 
-In the class extension, we added a new way to initialise the class. This will take the new parameters `id` and `status` and assign them to the class then initialise the class using the parent method.
-
-##### Changes to the ChatViewController
-
-In the `didPressSend` method we will change a few things:
-
-```Swift
-override func didPressSend(_ button: UIButton, withMessageText text: String, senderId: String, senderDisplayName: String, date: Date) {
-    let message = addMessage(senderId: senderId, name: senderId, text: text) as! AnonMessage
-
-    postMessage(message: message)
-    
-    finishSendingMessage(animated: true)
-}
-```
-
-First, the `addMessage` method will now return an `AnonMessage` instance. We will now pass this as the parameter to the `postMessage` class which makes a lot of sense.
+Now returning to the `ChatViewController` lets add a few properties that would be needed to the class:
 
 ```swift
-private func addMessage(senderId: String, name: String, text: String) -> Any? {
-    let leStatus = senderId == self.senderId
-        ? AnonMessageStatus.sending
-        : AnonMessageStatus.delivered
-    
-    let message = AnonMessage(senderId: senderId, status: leStatus, displayName: name, text: text, id: messages.count)
-    
-    if (message != nil) {
-        messages.append(message as AnonMessage!)
-    }
-    
-    return message
-}
+static let API_ENDPOINT = "http://localhost:4000";
 
-private func postMessage(message: AnonMessage) {
-    let params: Parameters = ["sender": message.senderId, "text": message.text]
-    hitEndpoint(url: ChatViewController.API_ENDPOINT + "/messages", parameters: params, message: message)
+var messages = [AnonMessage]()
+var pusher: Pusher!
+
+var incomingBubble: JSQMessagesBubbleImage!
+var outgoingBubble: JSQMessagesBubbleImage!
+```
+
+Now that its done, we will start customising the controller to suit our needs. First, we will add some logic to the `viewDidLoad` method: 
+
+```Swift
+override func viewDidLoad() {
+    super.viewDidLoad()
+
+    let n = Int(arc4random_uniform(1000))
+
+    senderId = "anonymous" + String(n)
+    senderDisplayName = senderId
+
+    inputToolbar.contentView.leftBarButtonItem = nil
+
+    incomingBubble = JSQMessagesBubbleImageFactory().incomingMessagesBubbleImage(with: UIColor.jsq_messageBubbleBlue())
+    outgoingBubble = JSQMessagesBubbleImageFactory().outgoingMessagesBubbleImage(with: UIColor.jsq_messageBubbleGreen())
+
+    collectionView!.collectionViewLayout.incomingAvatarViewSize = CGSize.zero
+    collectionView!.collectionViewLayout.outgoingAvatarViewSize = CGSize.zero
+
+    automaticallyScrollsToMostRecentMessage = true
+
+    collectionView?.reloadData()
+    collectionView?.layoutIfNeeded()
 }
 ```
 
-We update the `addMessage` and `postMessage` methods to reflect the new changes. The `addMessage` function now uses the `AnonMessage` class extension as opposed to using the `JSQMessage` class. So we can now send the `status` and `id` as parameters while instantiating the `AnonMessage` class.
+In the above code, we started customising the way our chat interface would look using the parent class that has these properties already set. So for instance, we are setting the `incomingBubble` to blue, and the `outgoingBubble` to green. We have also eliminated the avatar display because we do not need it right now.
 
-We will also change the contents of the `hitEndpoint` method to reflect new changes for our feature to work:
+The next thing we are going to do is override some of the methods that come with the parent controller so that we can display messages, customise the feel and more:
 
 ```Swift
-private func hitEndpoint(url: String, parameters: Parameters, message: AnonMessage? = nil) {
-    Alamofire.request(url, method: .post, parameters: parameters).validate().responseJSON { response in
-        switch response.result {
-        case .success:
-            self.isBusySendingEvent = false
-
-            if message != nil {
-                message?.status = .delivered
-                self.collectionView.reloadData()
-            }
-            
-        case .failure(let error):
-            self.isBusySendingEvent = false
-            print(error)
-        }
-    }
+override func collectionView(_ collectionView: JSQMessagesCollectionView!, messageDataForItemAt indexPath: IndexPath!) -> JSQMessageData! {
+    return messages[indexPath.item]
 }
-```
 
-The `hitEndpoint`  method now has a third optional `AnonMessage` paramenter we can then use this to change the status of the message when there is a successful response to `.delivered` then we can reload the data so that the changes would be apparent.
-
-We will now make the final change to the application in our`listenForNewMessages` method:
-
-```Swift
-private func listenForNewMessages() {
-    let options = PusherClientOptions(
-        host: .cluster("PUSHER_CLUSTER")
-    )
-    
-    pusher = Pusher(key: "PUSHER_KEY", options: options)
-    
-    let channel = pusher.subscribe("chatroom")
-
-    channel.bind(eventName: "new_message", callback: { (data: Any?) -> Void in
-        if let data = data as? [String: AnyObject] {
-            let author = data["sender"] as! String
-
-            if author != self.senderId {
-                let text = data["text"] as! String
-                
-                let message = self.addMessage(senderId: author, name: author, text: text) as! AnonMessage?
-                message?.status = .delivered
-                
-                self.finishReceivingMessage(animated: true)
-            }
-        }
-    })
-
-    channel.bind(eventName: "user_typing", callback: { (data: Any?) -> Void in
-        if let data = data as? [String: AnyObject] {
-            let author = data["sender"] as! String
-            if author != self.senderId {
-                let text = data["text"] as! String
-                self.navigationItem.title = text
-            }
-        }
-    })
-    
-    pusher.connect()
-}
-```
-
-We have added a delivered status to the message once it is received by the Pusher listener on the application.
-
-We will now add some few new methods that would help us display the actual message on the chat interface.
-
-```Swift
 override func collectionView(_ collectionView: JSQMessagesCollectionView!, attributedTextForCellBottomLabelAt indexPath: IndexPath!) -> NSAttributedString! {
     if !isAnOutgoingMessage(indexPath) {
         return nil
     }
-    
+
     let message = messages[indexPath.row]
 
     switch (message.status) {
@@ -186,35 +174,193 @@ override func collectionView(_ collectionView: JSQMessagesCollectionView!, attri
     }
 }
 
-private func isAnOutgoingMessage(_ indexPath: IndexPath!) -> Bool {
-    return messages[indexPath.row].senderId == senderId
-}
-
 override func collectionView(_ collectionView: JSQMessagesCollectionView!, layout collectionViewLayout: JSQMessagesCollectionViewFlowLayout!, heightForCellBottomLabelAt indexPath: IndexPath!) -> CGFloat {
     return CGFloat(15.0)
 }
+
+override func collectionView(_ collectionView: UICollectionView, numberOfItemsInSection section: Int) -> Int {
+    return messages.count
+}
+
+override func collectionView(_ collectionView: JSQMessagesCollectionView!, messageBubbleImageDataForItemAt indexPath: IndexPath!) -> JSQMessageBubbleImageDataSource! {
+    let message = messages[indexPath.item]
+    if message.senderId == senderId {
+        return outgoingBubble
+    } else {
+        return incomingBubble
+    }
+}
+
+override func collectionView(_ collectionView: JSQMessagesCollectionView!, avatarImageDataForItemAt indexPath: IndexPath!) -> JSQMessageAvatarImageDataSource! {
+    return nil
+}
+
+override func didPressSend(_ button: UIButton, withMessageText text: String, senderId: String, senderDisplayName: String, date: Date) {
+    let message = addMessage(senderId: senderId, name: senderId, text: text) as! AnonMessage
+
+    postMessage(message: message)
+    finishSendingMessage(animated: true)
+}
+
+private func isAnOutgoingMessage(_ indexPath: IndexPath!) -> Bool {
+    return messages[indexPath.row].senderId == senderId
+}
 ```
 
-In the above code, we override the a collection view that shows an attributed text at the bottom label of a chat message. This is where we will display the message status for outgoing images.
+ The next thing we are going to do is create some new methods on the controller that would help us, post a new message, then another to hit the remote endpoint to send the message, then a last one to append the new message sent (or received) to the messages array:
 
-In that method, we check to see if the message `isAnOutgoingMessage` then if it is, we can then use a `switch` statement to show one or the other based on the status of the message.
+```Swift
+private func postMessage(message: AnonMessage) {
+    let params: Parameters = ["sender": message.senderId, "text": message.text]
+    hitEndpoint(url: ChatViewController.API_ENDPOINT + "/messages", parameters: params, message: message)
+}
 
-In the second overriden collection view method, we specify the height of the bottom label so it is not invisible as the default is `0`. 
+private func hitEndpoint(url: String, parameters: Parameters, message: AnonMessage? = nil) {
+    Alamofire.request(url, method: .post, parameters: parameters).validate().responseJSON { response in
+        switch response.result {
+        case .success:
+            if message != nil {
+                message?.status = .delivered
+                self.collectionView.reloadData()
+            }
 
-Thats all, we can now run our application in XCode on our iPhone simulator. You should also run the node application that is accompanied in the code.
+        case .failure(let error):
+            print(error)
+        }
+    }
+}
 
-```Shell
-$ node index.js
+private func addMessage(senderId: String, name: String, text: String) -> Any? {
+    let leStatus = senderId == self.senderId
+        ? AnonMessageStatus.sending
+        : AnonMessageStatus.delivered
+
+    let message = AnonMessage(senderId: senderId, status: leStatus, displayName: name, text: text, id: messages.count)
+
+    if (message != nil) {
+        messages.append(message as AnonMessage!)
+    }
+
+    return message
+}
 ```
 
-Now when a message is sent on our simulator, we can see it change from  *Sending…* just after it is sent to *delivered* when the message is delivered. 
+Great. Now everytime we send a new message, the `didPressSend` method will be triggered  and all the other ones will fall in to place nicely!
+
+For the last piece of the puzzle, we want to create the method that listens for Pusher events and fires a callback when an event triggered is received.
+
+```swift
+private func listenForNewMessages() {
+    let options = PusherClientOptions(
+        host: .cluster("PUSHER_CLUSTER")
+    )
+
+    pusher = Pusher(key: "PUSHER_KEY", options: options)
+
+    let channel = pusher.subscribe("chatroom")
+
+    channel.bind(eventName: "new_message", callback: { (data: Any?) -> Void in
+        if let data = data as? [String: AnyObject] {
+            let author = data["sender"] as! String
+
+            if author != self.senderId {
+                let text = data["text"] as! String
+
+                let message = self.addMessage(senderId: author, name: author, text: text) as! AnonMessage?
+                message?.status = .delivered
+
+                self.finishReceivingMessage(animated: true)
+            }
+        }
+    })
+
+    pusher.connect()
+}
+```
+
+So in this method, we have created a `Pusher` instance, we have set the cluster and the key. We attach the instance to a `chatroom` channel and then bind to the `new_message` event on the channel. **Remember to replace the key and cluster with the actual value you have gotten from your Pusher dashboard**. 
+
+Now we should be done with the application and as it stands, it should work but no messages can be sent just yet as we need a backend application for it to work properly.
+
+### Building the backend Node application
+
+Now that we are done with the iOS and XCode parts, we can create the NodeJS back end for the application. We are going to be using Express, so that we can quickly whip something up.
+
+Create a directory for the web application and then create two new files:
+
+```
+// index.js
+var path = require('path');
+var Pusher = require('pusher');
+var express = require('express');
+var bodyParser = require('body-parser');
+
+var app = express();
+
+var pusher = new Pusher({
+  appId: 'PUSHER_ID',
+  key: 'PUSHER_KEY',
+  secret: 'PUSHER_SECRET',
+  cluster: 'PUSHER_CLUSTER',
+  encrypted: true
+});
+
+app.use(bodyParser.json());
+app.use(bodyParser.urlencoded({ extended: false }));
+
+app.post('/messages', function(req, res){
+  var message = {
+    text: req.body.text,
+    sender: req.body.sender
+  }
+  pusher.trigger('chatroom', 'new_message', message);
+  res.json({success: 200});
+});
+
+app.use(function(req, res, next) {
+    var err = new Error('Not Found');
+    err.status = 404;
+    next(err);
+});
+
+module.exports = app;
+
+app.listen(4000, function(){
+  console.log('App listening on port 4000!')
+})
+```
+
+and **packages.json**
+
+```
+{
+  "main": "index.js",
+  "dependencies": {
+    "body-parser": "^1.16.0",
+    "express": "^4.14.1",
+    "path": "^0.12.7",
+    "pusher": "^1.5.1"
+  }
+}
+
+```
+
+Now run `npm install` on the directory and then `node index.js` once the npm installation is complete. You should see *App listening on port 4000!* message.
+
+![How to build message delivery status in iOS using Pusher](https://dl.dropbox.com/s/cvwccr7x358r7to/message-delivery-status-on-ios-using-pusher-5.png)
+
+## Testing the application
+
+Once you have your local node webserver running, you will need to make some changes so your application can talk to the local webserver.
+
+In the `info.plist` file, make the following changes: 
+
+![](https://dl.dropbox.com/s/f9mwlct0eswxt14/message-delivery-status-on-ios-using-pusher-4.png)
+
+With this change, you can build and run your application and it will talk directly with your local web application.
 
 ### Conclusion
 
-Now with the changes we have made, we have been able to add delivery status to our iOS chat application using Pusher and Swift. The source code to the application is available on [GitHub](#).
+In this article, we have explored how to create an iOS chat application with a message delivery status message after the message is sent to other users. For practice, you can expand the statuses to support more instances.
 
-![Message delivery status on iOS using Pusher](https://dl.dropbox.com/s/45snbjc0oedc7w5/message-delivery-status-on-ios-using-pusher-1.png)
-
-This should be seen as a guide to how easy it could be to implement this feature in our application. It should probably not be used in production. As an exercise, see if you can expand the feature of the chat application by adding more message statuses like *failed* and *read*.
-
-Have any questions or feedback, on the article? You can add them to the comment section below.
+Have a question or feedback on the article? Please ask below in the comment section. The repository for the application and the Node backend is available [here](https://github.com/neoighodaro/message-delivery-status-ios).
