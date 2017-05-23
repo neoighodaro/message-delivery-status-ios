@@ -288,7 +288,7 @@ Now that we are done with the iOS and XCode parts, we can create the NodeJS back
 
 Create a directory for the web application and then create two new files:
 
-```
+```javascript
 // index.js
 var path = require('path');
 var Pusher = require('pusher');
@@ -332,7 +332,7 @@ app.listen(4000, function(){
 
 and **packages.json**
 
-```
+```json
 {
   "main": "index.js",
   "dependencies": {
@@ -342,7 +342,6 @@ and **packages.json**
     "pusher": "^1.5.1"
   }
 }
-
 ```
 
 Now run `npm install` on the directory and then `node index.js` once the npm installation is complete. You should see *App listening on port 4000!* message.
@@ -355,7 +354,7 @@ Once you have your local node webserver running, you will need to make some chan
 
 In the `info.plist` file, make the following changes: 
 
-![](https://dl.dropbox.com/s/f9mwlct0eswxt14/message-delivery-status-on-ios-using-pusher-4.png)
+![How to build message delivery status in iOS using Pusher](https://dl.dropbox.com/s/f9mwlct0eswxt14/message-delivery-status-on-ios-using-pusher-4.png)
 
 With this change, you can build and run your application and it will talk directly with your local web application.
 
