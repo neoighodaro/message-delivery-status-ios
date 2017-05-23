@@ -2,7 +2,6 @@ var path = require('path');
 var Pusher = require('pusher');
 var express = require('express');
 var bodyParser = require('body-parser');
-var sleep = require('sleep');
 
 var app = express();
 
@@ -23,21 +22,9 @@ app.post('/messages', function(req, res){
     sender: req.body.sender
   }
 
-  // @DEV: Simulate network delays...
-  sleep.sleep(2);
-
   pusher.trigger('chatroom', 'new_message', message);
   res.json({success: 200});
 });
-
-app.post('/typing', function (req, res) {
-  var message = {
-    sender: req.body.sender,
-    text: req.body.sender + " is typing..."
-  };
-  pusher.trigger('chatroom', 'user_typing', message);
-  res.json({success: 200})
-})
 
 app.use(function(req, res, next) {
     var err = new Error('Not Found');
