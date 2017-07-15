@@ -13,7 +13,7 @@ Some of the tools that we will be needing to build our application are:
 Below is a screen recording of message delivery status using Pusher in action. As you can see, when a message is sent, it is marked as sent, and the moment it hits the recipients phone, it is marked as delivered.
 
 
-https://www.dropbox.com/s/qrml2une712my9f/message-delivery-status-on-ios-using-pusher-2.gif?dl=1
+![](https://dl.dropbox.com/s/qrml2une712my9f/message-delivery-status-on-ios-using-pusher-2.gif)
 
 
 **Getting started with our iOS application**
@@ -61,7 +61,7 @@ Now that we have set up the views using the interface builder on the `MainStoryb
 
 
     import UIKit
-    
+
     class WelcomeViewController: UIViewController {
         override func viewDidLoad() {
             super.viewDidLoad()
@@ -115,9 +115,9 @@ Before we continue working on the chat controller, we want to create a last clas
             } else {
                 self.id = 0
             }
-            
-            
-    
+
+
+​    
             super.init(senderId: senderId, senderDisplayName: displayName, date: Date.init(), text: text)
         }
     
@@ -132,7 +132,7 @@ Now returning to the `ChatViewController` let's add a few properties to the clas
 
 
     static let API_ENDPOINT = "http://localhost:4000";
-    
+
     var messages = [AnonMessage]()
     var pusher: Pusher!
     
@@ -381,8 +381,8 @@ The **index.js** file…
     app.get('/', (req, res) => {
       res.json("It works!");
     });
-    
-    
+
+
     // ------------------------------------------------------
     // Catch errors
     // ------------------------------------------------------
@@ -392,8 +392,8 @@ The **index.js** file…
         err.status = 404;
         next(err);
     });
-    
-    
+
+
     // ------------------------------------------------------
     // Start application
     // ------------------------------------------------------
@@ -427,7 +427,7 @@ next file is the **packages.json** where we define the NPM dependencies:
 Now run `npm install` on the directory and then `node index.js` once the npm installation is complete. You should see *App listening on port 4000!* message.
 
 
-https://dl.dropbox.com/s/cvwccr7x358r7to/message-delivery-status-on-ios-using-pusher-5.png
+![](https://dl.dropbox.com/s/cvwccr7x358r7to/message-delivery-status-on-ios-using-pusher-5.png)
 
 
 **Testing the application**
@@ -435,7 +435,7 @@ https://dl.dropbox.com/s/cvwccr7x358r7to/message-delivery-status-on-ios-using-pu
 Once you have your local node web server running, you will need to make some changes so your application can talk to the local web server. In the `info.plist` file, make the following changes:
 
 
-https://dl.dropbox.com/s/f9mwlct0eswxt14/message-delivery-status-on-ios-using-pusher-4.png
+![](https://dl.dropbox.com/s/f9mwlct0eswxt14/message-delivery-status-on-ios-using-pusher-4.png)
 
 
 With this change, you can build and run your application and it will talk directly with your local web application.
