@@ -58,6 +58,8 @@ class ChatViewController: JSQMessagesViewController {
         switch (message.status) {
         case .sending:
             return NSAttributedString(string: "Sending...")
+        case .sent:
+            return NSAttributedString(string: "Sent")
         case .delivered:
             return NSAttributedString(string: "Delivered")
         }
@@ -85,10 +87,12 @@ class ChatViewController: JSQMessagesViewController {
     }
 
     override func didPressSend(_ button: UIButton, withMessageText text: String, senderId: String, senderDisplayName: String, date: Date) {
-        let message = addMessage(senderId: senderId, name: senderId, text: text) as! AnonMessage
+        let message = addMessage(senderId: senderId, name: senderId, text: text, id: nil)
 
-        postMessage(message: message)
-
+        if (message != nil) {
+            postMessage(message: message as! AnonMessage)
+        }
+        
         finishSendingMessage(animated: true)
     }
 
@@ -104,9 +108,12 @@ class ChatViewController: JSQMessagesViewController {
     private func hitEndpoint(url: String, parameters: Parameters, message: AnonMessage? = nil) {
         Alamofire.request(url, method: .post, parameters: parameters).validate().responseJSON { response in
             switch response.result {
-            case .success:
+            case .success(let JSON):
+                let response = JSON as! NSDictionary
+
                 if message != nil {
-                    message?.status = .delivered
+                    message?.id = (response.object(forKey: "ID") as! Int) as Int
+                    message?.status = .sent
                     self.collectionView.reloadData()
                 }
 
@@ -116,12 +123,12 @@ class ChatViewController: JSQMessagesViewController {
         }
     }
 
-    private func addMessage(senderId: String, name: String, text: String) -> Any? {
-        let leStatus = senderId == self.senderId
-            ? AnonMessageStatus.sending
-            : AnonMessageStatus.delivered
+    private func addMessage(senderId: String, name: String, text: String, id: Int?) -> Any? {
+        let status = AnonMessageStatus.sending
+        
+        let id = id == nil ? nil : id;
 
-        let message = AnonMessage(senderId: senderId, status: leStatus, displayName: name, text: text, id: messages.count)
+        let message = AnonMessage(senderId: senderId, status: status, displayName: name, text: text, id: id)
 
         if (message != nil) {
             messages.append(message as AnonMessage!)
@@ -141,16 +148,30 @@ class ChatViewController: JSQMessagesViewController {
 
         channel.bind(eventName: "new_message", callback: { (data: Any?) -> Void in
             if let data = data as? [String: AnyObject] {
+                let messageId = data["ID"] as! Int
                 let author = data["sender"] as! String
-
+                
                 if author != self.senderId {
                     let text = data["text"] as! String
 
-                    let message = self.addMessage(senderId: author, name: author, text: text) as! AnonMessage?
+                    let message = self.addMessage(senderId: author, name: author, text: text, id: messageId) as! AnonMessage?
                     message?.status = .delivered
+                    
+                    let params: Parameters = ["ID":messageId]
+                    self.hitEndpoint(url: ChatViewController.API_ENDPOINT + "/delivered", parameters: params, message: nil)
 
                     self.finishReceivingMessage(animated: true)
                 }
+            }
+        })
+        
+        channel.bind(eventName: "message_delivered", callback: { (data: Any?) -> Void in
+            if let data = data as? [String: AnyObject] {
+                let messageId = (data["ID"] as! NSString).integerValue
+                let msg = self.messages.first(where: { $0.id == messageId })
+                
+                msg?.status = AnonMessageStatus.delivered
+                self.finishReceivingMessage(animated: true)
             }
         })
 

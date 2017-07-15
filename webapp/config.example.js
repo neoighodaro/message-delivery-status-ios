@@ -1,0 +1,6 @@
+module.exports.config = {
+    PUSHER_ID: 'PUSHER_ID',
+    PUSHER_KEY: 'PUSHER_KEY',
+    PUSHER_SECRET: 'PUSHER_SECRET',
+    PUSHER_CLUSTER: 'PUSHER_CLUSTER',
+};

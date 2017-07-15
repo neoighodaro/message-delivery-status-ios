@@ -11,6 +11,7 @@ import JSQMessagesViewController
 
 enum AnonMessageStatus {
     case sending
+    case sent
     case delivered
 }
 
@@ -18,9 +19,17 @@ class AnonMessage: JSQMessage {
     var status : AnonMessageStatus
     var id : Int
 
-    public init!(senderId: String, status: AnonMessageStatus, displayName: String, text: String, id: Int) {
+    public init!(senderId: String, status: AnonMessageStatus, displayName: String, text: String, id: Int?) {
         self.status = status
-        self.id = id
+        
+        if (id != nil) {
+            self.id = id!
+        } else {
+            self.id = 0
+        }
+        
+        
+
         super.init(senderId: senderId, senderDisplayName: displayName, date: Date.init(), text: text)
     }
 
